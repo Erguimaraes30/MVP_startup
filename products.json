@@ -1,0 +1,20 @@
+[
+  {
+    "id": "1",
+    "nome": "Coca-Cola Lata 350ml",
+    "preco": 4.50,
+    "qrCode": "COCA123"
+  },
+  {
+    "id": "2",
+    "nome": "Água Mineral 500ml",
+    "preco": 2.00,
+    "qrCode": "AGUA001"
+  },
+  {
+    "id": "3",
+    "nome": "Chocolate Baton",
+    "preco": 3.50,
+    "qrCode": "CHOC777"
+  }
+]
