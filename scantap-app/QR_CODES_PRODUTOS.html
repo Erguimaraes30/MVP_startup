@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>QR Codes dos Produtos - ScanTap</title>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            padding: 20px; 
+            background: #f0f8ff;
+        }
+        .produto {
+            border: 2px solid #007bff;
+            margin: 20px 0;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            background: white;
+        }
+        .produto h2 {
+            color: #007bff;
+            margin-top: 0;
+        }
+        canvas {
+            margin: 20px;
+            border: 1px solid #ccc;
+        }
+        .codigo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #ff0000;
+            background: #ffffcc;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .preco {
+            font-size: 20px;
+            color: #00aa00;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>🛒 QR CODES DOS PRODUTOS - SCANTAP</h1>
+    <p><strong>COMO USAR:</strong> Aponte a câmera do app para qualquer QR code abaixo para adicionar o produto no carrinho!</p>
+
+    <div class="produto">
+        <h2>🥤 Coca-Cola 350ml</h2>
+        <div class="preco">R$ 5,50</div>
+        <div class="codigo">COCA001</div>
+        <canvas id="qr1"></canvas>
+    </div>
+
+    <div class="produto">
+        <h2>🍫 Chocolate Nestlé</h2>
+        <div class="preco">R$ 7,20</div>
+        <div class="codigo">CHOCO002</div>
+        <canvas id="qr2"></canvas>
+    </div>
+
+    <div class="produto">
+        <h2>🥔 Batata Chips</h2>
+        <div class="preco">R$ 9,90</div>
+        <div class="codigo">CHIPS003</div>
+        <canvas id="qr3"></canvas>
+    </div>
+
+    <div class="produto">
+        <h2>💧 Água Mineral</h2>
+        <div class="preco">R$ 2,50</div>
+        <div class="codigo">AGUA004</div>
+        <canvas id="qr4"></canvas>
+    </div>
+
+    <div class="produto">
+        <h2>🍪 Biscoito Oreo</h2>
+        <div class="preco">R$ 4,80</div>
+        <div class="codigo">OREO005</div>
+        <canvas id="qr5"></canvas>
+    </div>
+
+    <script>
+        // Gerar QR codes para cada produto
+        QRCode.toCanvas(document.getElementById('qr1'), 'COCA001', { width: 200 });
+        QRCode.toCanvas(document.getElementById('qr2'), 'CHOCO002', { width: 200 });
+        QRCode.toCanvas(document.getElementById('qr3'), 'CHIPS003', { width: 200 });
+        QRCode.toCanvas(document.getElementById('qr4'), 'AGUA004', { width: 200 });
+        QRCode.toCanvas(document.getElementById('qr5'), 'OREO005', { width: 200 });
+    </script>
+
+    <div style="background: #ffffcc; padding: 20px; margin-top: 30px; border-radius: 10px;">
+        <h3>📱 INSTRUÇÕES:</h3>
+        <ol>
+            <li>Abra o app ScanTap no seu celular</li>
+            <li>Clique em "📷 Escanear QR Code"</li>
+            <li>Aponte a câmera para qualquer QR code acima</li>
+            <li>O produto será automaticamente adicionado ao carrinho!</li>
+        </ol>
+        
+        <h3>🔥 TESTE TAMBÉM:</h3>
+        <p>Você pode testar códigos que <strong>NÃO existem</strong> para ver a mensagem de erro:</p>
+        <ul>
+            <li>TESTE123</li>
+            <li>PRODUTO999</li>
+            <li>QUALQUERCOISA</li>
+        </ul>
+    </div>
+</body>
+</html>

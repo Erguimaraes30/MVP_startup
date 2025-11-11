@@ -1,17 +1,20 @@
 {
   "name": "mvp_startup",
   "version": "1.0.0",
-  "main": "server.js",
+  "main": "scantap-app/app/index.tsx",
   "scripts": {
-    "start": "node server.js",
-    "dev": "nodemon server.js"
+    "start": "echo 'Use cd scantap-app && npx expo start'",
+    "dev": "echo 'Use cd scantap-app && npx expo start'"
   },
   "dependencies": {
     "body-parser": "^2.2.0",
     "cors": "^2.8.5",
+    "expo": "^54.0.23",
     "express": "^5.1.0"
   },
   "devDependencies": {
-    "nodemon": "^3.1.10"
+    "@types/react": "~19.1.10",
+    "nodemon": "^3.1.10",
+    "typescript": "~5.9.2"
   }
 }

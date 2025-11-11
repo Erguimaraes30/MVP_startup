@@ -1,152 +1,596 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, Button, StyleSheet, FlatList, Alert } from "react-native";
-import { BarCodeScanner } from "expo-barcode-scanner";
+import { View, Text, StyleSheet, FlatList, Alert, TouchableOpacity, SafeAreaView, Dimensions, Animated } from "react-native";
+import { CameraView, Camera } from "expo-camera";
+import { LinearGradient } from 'expo-linear-gradient';
+
+// Importar produtos do arquivo local
+const produtosData = require('../products.json');
 
 type Produto = {
+  id: string;
   nome: string;
   preco: number;
+  qrCode: string;
 };
 
 export default function Index() {
-  const [hasPermission, setHasPermission] = useState<boolean | null>(null);
-  const [scanned, setScanned] = useState(false);
-  const [showScanner, setShowScanner] = useState(false);
   const [carrinho, setCarrinho] = useState<Produto[]>([]);
   const [total, setTotal] = useState(0);
+  const [showScanner, setShowScanner] = useState(false);
+  const [hasPermission, setHasPermission] = useState<boolean | null>(null);
+  const [animatedValue] = useState(new Animated.Value(0));
+
+  const { width } = Dimensions.get('window');
 
   useEffect(() => {
-    (async () => {
-      const { status } = await BarCodeScanner.requestPermissionsAsync();
-      setHasPermission(status === "granted");
-    })();
+    const getCameraPermissions = async () => {
+      const { status } = await Camera.requestCameraPermissionsAsync();
+      setHasPermission(status === 'granted');
+    };
+
+    getCameraPermissions();
+
+    // Animação inicial
+    Animated.timing(animatedValue, {
+      toValue: 1,
+      duration: 1000,
+      useNativeDriver: true,
+    }).start();
   }, []);
 
-  const handleBarCodeScanned = ({ data }: { data: string }) => {
-    setScanned(true);
-    try {
-      const produto = JSON.parse(data);
-      if (produto.nome && produto.preco) {
-        setCarrinho([...carrinho, produto]);
-        setTotal(total + produto.preco);
-        Alert.alert("Produto adicionado!", `${produto.nome} - R$${produto.preco.toFixed(2)}`);
-      } else {
-        Alert.alert("QR inválido", "O QR code não contém informações de produto válidas.");
-      }
-    } catch {
-      Alert.alert("Erro", "Não foi possível ler este QR Code.");
-    }
-    setShowScanner(false);
+  const buscarProdutoPorQR = (qrCode: string): Produto | null => {
+    return produtos.find(produto => produto.qrCode === qrCode) || null;
   };
 
-  if (hasPermission === null) {
-    return (
-      <View style={styles.container}>
-        <Text>Solicitando permissão da câmera...</Text>
-      </View>
-    );
-  }
+  const onQRCodeScanned = ({ data }: { data: string }) => {
+    const produto = buscarProdutoPorQR(data);
+    if (produto) {
+      adicionarProduto(produto);
+      setShowScanner(false);
+    } else {
+      Alert.alert("Produto não encontrado", `QR Code: ${data}\nProduto não cadastrado no sistema.`);
+    }
+  };
 
-  if (hasPermission === false) {
-    return (
-      <View style={styles.container}>
-        <Text>Permissão negada! Vá nas configurações e libere a câmera.</Text>
-      </View>
+  const iniciarScanner = async () => {
+    if (hasPermission === null) {
+      Alert.alert("Aguarde", "Verificando permissões da câmera...");
+      return;
+    }
+    if (hasPermission === false) {
+      Alert.alert("Permissão negada", "É necessário permitir o uso da câmera para escanear QR codes.");
+      return;
+    }
+    setShowScanner(true);
+  };
+
+  // Usar produtos do arquivo JSON
+  const produtos = produtosData;
+
+  const adicionarProduto = (produto: Produto) => {
+    setCarrinho([...carrinho, produto]);
+    setTotal(total + produto.preco);
+    
+    // Animação de sucesso
+    Animated.sequence([
+      Animated.timing(animatedValue, {
+        toValue: 1.1,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(animatedValue, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start();
+
+    Alert.alert(
+      "✅ Produto Adicionado!", 
+      `${produto.nome}\nR$ ${produto.preco.toFixed(2)}`,
+      [{ text: "Continuar Comprando", style: "default" }]
     );
-  }
+  };
 
   if (showScanner) {
     return (
-      <View style={styles.scannerContainer}>
-        <BarCodeScanner
-          onBarCodeScanned={scanned ? undefined : handleBarCodeScanned}
+      <SafeAreaView style={styles.scannerContainer}>
+        <CameraView
           style={StyleSheet.absoluteFillObject}
+          facing="back"
+          onBarcodeScanned={onQRCodeScanned}
         />
-        <Button title="Cancelar" onPress={() => setShowScanner(false)} />
-      </View>
+        <LinearGradient
+          colors={['rgba(0,0,0,0.8)', 'transparent', 'rgba(0,0,0,0.8)']}
+          style={styles.scannerOverlay}
+        >
+          <View style={styles.scannerHeader}>
+            <LinearGradient
+              colors={['#26b2b7', '#008389']}
+              style={styles.scannerHeaderCard}
+            >
+              <Text style={styles.scannerTitle}>📱 ScanTap Ativo</Text>
+              <Text style={styles.scannerSubtitle}>Posicione o QR Code no centro da tela</Text>
+            </LinearGradient>
+          </View>
+          
+          <View style={styles.scannerFrame}>
+            <View style={styles.cornerTopLeft} />
+            <View style={styles.cornerTopRight} />
+            <View style={styles.cornerBottomLeft} />
+            <View style={styles.cornerBottomRight} />
+          </View>
+          
+          <TouchableOpacity 
+            style={styles.modernCancelButton}
+            onPress={() => setShowScanner(false)}
+          >
+            <LinearGradient
+              colors={['#ff6b6b', '#ee5a24']}
+              style={styles.cancelButtonGradient}
+            >
+              <Text style={styles.cancelButtonText}>✕ Cancelar</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+        </LinearGradient>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>🛒 ScanTap</Text>
-      <Text style={styles.subtitle}>Simule um carrinho com QR Codes</Text>
-
-      <View style={styles.buttons}>
-        <Button title="📷 Escanear Produto" onPress={() => { setShowScanner(true); setScanned(false); }} />
+    <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <View style={styles.logoContainer}>
+          <Text style={styles.logoIcon}>🛒</Text>
+        </View>
+        <Text style={styles.title}>ScanTap</Text>
+        <Text style={styles.subtitle}>ESCANEOU, PAGOU, SAIU!</Text>
       </View>
 
-      <Text style={styles.cartTitle}>Carrinho:</Text>
+      <TouchableOpacity 
+        style={styles.scanButton}
+        onPress={iniciarScanner}
+      >
+        <Text style={styles.scanButtonIcon}>📷</Text>
+        <Text style={styles.scanButtonText}>Escanear Produto</Text>
+      </TouchableOpacity>
 
-      {carrinho.length === 0 ? (
-        <Text style={styles.emptyCart}>Nenhum produto adicionado ainda.</Text>
-      ) : (
-        <FlatList
-          data={carrinho}
-          keyExtractor={(_, index) => index.toString()}
-          renderItem={({ item }) => (
-            <Text style={styles.item}>{item.nome} — R$ {item.preco.toFixed(2)}</Text>
-          )}
-        />
-      )}
+      <View style={styles.cartSection}>
+        <Text style={styles.cartTitle}>🛒 Seu Carrinho</Text>
+        
+        {carrinho.length === 0 ? (
+          <View style={styles.emptyCartContainer}>
+            <Text style={styles.emptyCartIcon}>�️</Text>
+            <Text style={styles.emptyCartText}>Carrinho vazio</Text>
+            <Text style={styles.emptyCartSubtext}>Escaneie um produto para começar</Text>
+          </View>
+        ) : (
+          <>
+            <FlatList
+              data={carrinho}
+              keyExtractor={(_, index) => index.toString()}
+              renderItem={({ item }) => (
+                <View style={styles.cartItem}>
+                  <Text style={styles.cartItemName}>{item.nome}</Text>
+                  <Text style={styles.cartItemPrice}>R$ {item.preco.toFixed(2)}</Text>
+                </View>
+              )}
+              style={styles.cartList}
+              showsVerticalScrollIndicator={false}
+            />
+            
+            <View style={styles.totalSection}>
+              <Text style={styles.totalText}>Total: R$ {total.toFixed(2)}</Text>
+            </View>
 
-      <Text style={styles.total}>Total: R$ {total.toFixed(2)}</Text>
+            <TouchableOpacity
+              style={styles.checkoutButton}
+              onPress={() => {
+                Alert.alert(
+                  "🎉 Compra Finalizada!", 
+                  `Total: R$ ${total.toFixed(2)}\n\nObrigado por usar o ScanTap!`,
+                  [
+                    { 
+                      text: "Novo Carrinho", 
+                      onPress: () => {
+                        setCarrinho([]);
+                        setTotal(0);
+                      }
+                    }
+                  ]
+                );
+              }}
+            >
+              <Text style={styles.checkoutButtonText}>💳 Finalizar Compra</Text>
+            </TouchableOpacity>
+          </>
+        )}
+      </View>
 
-      {carrinho.length > 0 && (
-        <Button
-          title="🧾 Finalizar Compra"
-          onPress={() => {
-            Alert.alert("Compra Finalizada", "Obrigado por usar o ScanTap!");
-            setCarrinho([]);
-            setTotal(0);
-          }}
-        />
-      )}
-    </View>
+      <Text style={styles.footer}>Produtos disponíveis: {produtos.length}</Text>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: "center",
+  },
+  safeContainer: {
+    flex: 1,
+    paddingHorizontal: 20,
+  },
+  header: {
     alignItems: "center",
-    backgroundColor: "#f0f8ff",
-    padding: 20,
+    paddingVertical: 30,
+    paddingTop: 50,
+  },
+  logoContainer: {
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 20,
+    elevation: 8,
+    shadowColor: "#26b2b7",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+  },
+  logoIcon: {
+    fontSize: 45,
+    color: "white",
   },
   title: {
-    fontSize: 28,
-    fontWeight: "bold",
-    color: "#007bff",
+    fontSize: 36,
+    fontWeight: "800",
+    color: "#008389",
+    marginBottom: 8,
+    letterSpacing: 2,
   },
   subtitle: {
-    fontSize: 16,
-    color: "#555",
-    marginBottom: 20,
+    fontSize: 14,
+    color: "#008389",
+    fontWeight: "600",
+    letterSpacing: 3,
+    opacity: 0.8,
   },
-  buttons: {
-    marginVertical: 10,
-  },
-  cartTitle: {
-    fontSize: 20,
-    marginTop: 20,
-    fontWeight: "bold",
-  },
-  emptyCart: {
-    fontSize: 16,
-    color: "#888",
-    marginTop: 10,
-  },
-  item: {
-    fontSize: 16,
-    padding: 5,
-  },
-  total: {
-    fontSize: 18,
-    fontWeight: "bold",
+  decorativeLine: {
+    width: 60,
+    height: 4,
+    backgroundColor: "#26b2b7",
+    borderRadius: 2,
     marginTop: 15,
   },
+  scanButtonContainer: {
+    marginVertical: 25,
+  },
+  modernScanButton: {
+    borderRadius: 20,
+    overflow: 'hidden',
+    elevation: 8,
+    shadowColor: "#26b2b7",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+  },
+  scanButtonGradient: {
+    paddingVertical: 25,
+    paddingHorizontal: 30,
+    alignItems: "center",
+  },
+  scanButtonContent: {
+    alignItems: "center",
+  },
+  scanButtonIcon: {
+    fontSize: 32,
+    marginBottom: 12,
+  },
+  scanButtonText: {
+    color: "white",
+    fontSize: 20,
+    fontWeight: "bold",
+    marginBottom: 5,
+  },
+  scanButtonSubtext: {
+    color: "rgba(255,255,255,0.8)",
+    fontSize: 13,
+    fontWeight: "500",
+  },
+  modernCartSection: {
+    flex: 1,
+    marginBottom: 20,
+  },
+  cartGradient: {
+    flex: 1,
+    borderRadius: 25,
+    padding: 25,
+    elevation: 4,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+  },
+  cartHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 20,
+  },
+  cartTitle: {
+    fontSize: 22,
+    fontWeight: "bold",
+    color: "#008389",
+  },
+  cartBadge: {
+    backgroundColor: "#26b2b7",
+    borderRadius: 15,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    minWidth: 30,
+    alignItems: "center",
+  },
+  cartBadgeText: {
+    color: "white",
+    fontSize: 14,
+    fontWeight: "bold",
+  },
+  emptyCartContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 50,
+  },
+  emptyCartCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: "#f8f9fa",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 20,
+    borderWidth: 2,
+    borderColor: "#e9ecef",
+  },
+  emptyCartIcon: {
+    fontSize: 35,
+  },
+  emptyCartText: {
+    fontSize: 20,
+    color: "#008389",
+    fontWeight: "600",
+    marginBottom: 8,
+  },
+  emptyCartSubtext: {
+    fontSize: 15,
+    color: "#666",
+    textAlign: "center",
+    lineHeight: 22,
+  },
+  cartList: {
+    maxHeight: 200,
+  },
+  modernCartItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    backgroundColor: "#f8f9fa",
+    borderRadius: 15,
+    marginBottom: 12,
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+  },
+  cartItemLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+  },
+  cartItemIcon: {
+    width: 45,
+    height: 45,
+    borderRadius: 22,
+    backgroundColor: "#26b2b7",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 15,
+  },
+  cartItemEmoji: {
+    fontSize: 20,
+  },
+  cartItemInfo: {
+    flex: 1,
+  },
+  cartItemName: {
+    fontSize: 16,
+    color: "#008389",
+    fontWeight: "600",
+    marginBottom: 4,
+  },
+  cartItemCode: {
+    fontSize: 12,
+    color: "#666",
+    fontWeight: "500",
+  },
+  cartItemRight: {
+    alignItems: "flex-end",
+  },
+  cartItemPrice: {
+    fontSize: 18,
+    color: "#26b2b7",
+    fontWeight: "bold",
+  },
+  modernTotalSection: {
+    borderRadius: 15,
+    marginTop: 20,
+    elevation: 3,
+    shadowColor: "#26b2b7",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+  },
+  totalContent: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 20,
+    paddingHorizontal: 25,
+  },
+  totalLabel: {
+    fontSize: 16,
+    color: "white",
+    fontWeight: "600",
+    opacity: 0.9,
+  },
+  totalText: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "white",
+  },
+  modernCheckoutButton: {
+    marginTop: 20,
+    borderRadius: 15,
+    overflow: 'hidden',
+    elevation: 6,
+    shadowColor: "#3a7bd5",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+  },
+  checkoutButtonGradient: {
+    paddingVertical: 18,
+    paddingHorizontal: 25,
+    alignItems: "center",
+  },
+  checkoutButtonText: {
+    color: "white",
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 4,
+  },
+  checkoutButtonSubtext: {
+    color: "rgba(255,255,255,0.8)",
+    fontSize: 13,
+    fontWeight: "500",
+  },
+  modernFooter: {
+    alignItems: "center",
+    paddingVertical: 15,
+  },
+  footerText: {
+    textAlign: "center",
+    color: "#008389",
+    fontSize: 12,
+    fontWeight: "500",
+    marginBottom: 4,
+  },
+  footerSubtext: {
+    textAlign: "center",
+    color: "#666",
+    fontSize: 11,
+    fontWeight: "400",
+  },
+  // Scanner Styles
   scannerContainer: {
     flex: 1,
-    justifyContent: "flex-end",
+    backgroundColor: "#000",
+  },
+  scannerOverlay: {
+    flex: 1,
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 30,
+  },
+  scannerHeader: {
+    alignItems: "center",
+    paddingTop: 80,
+  },
+  scannerHeaderCard: {
+    borderRadius: 20,
+    paddingVertical: 20,
+    paddingHorizontal: 30,
+    alignItems: "center",
+    elevation: 8,
+    shadowColor: "#26b2b7",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+  },
+  scannerTitle: {
+    color: "white",
+    fontSize: 24,
+    fontWeight: "bold",
+    marginBottom: 8,
+  },
+  scannerSubtitle: {
+    color: "rgba(255,255,255,0.9)",
+    fontSize: 16,
+    textAlign: "center",
+    fontWeight: "500",
+  },
+  scannerFrame: {
+    width: 250,
+    height: 250,
+    position: "relative",
+  },
+  cornerTopLeft: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    width: 30,
+    height: 30,
+    borderTopWidth: 4,
+    borderLeftWidth: 4,
+    borderColor: "#26b2b7",
+  },
+  cornerTopRight: {
+    position: "absolute",
+    top: 0,
+    right: 0,
+    width: 30,
+    height: 30,
+    borderTopWidth: 4,
+    borderRightWidth: 4,
+    borderColor: "#26b2b7",
+  },
+  cornerBottomLeft: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    width: 30,
+    height: 30,
+    borderBottomWidth: 4,
+    borderLeftWidth: 4,
+    borderColor: "#26b2b7",
+  },
+  cornerBottomRight: {
+    position: "absolute",
+    bottom: 0,
+    right: 0,
+    width: 30,
+    height: 30,
+    borderBottomWidth: 4,
+    borderRightWidth: 4,
+    borderColor: "#26b2b7",
+  },
+  modernCancelButton: {
+    borderRadius: 25,
+    overflow: 'hidden',
+    marginBottom: 50,
+    elevation: 6,
+  },
+  cancelButtonGradient: {
+    paddingVertical: 15,
+    paddingHorizontal: 30,
+    alignItems: "center",
+  },
+  cancelButtonText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "bold",
   },
 });
