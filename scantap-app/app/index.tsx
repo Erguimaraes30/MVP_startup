@@ -2,9 +2,50 @@ import React, { useState, useEffect } from "react";
 import { View, Text, StyleSheet, FlatList, Alert, TouchableOpacity, SafeAreaView, Dimensions, Animated } from "react-native";
 import { CameraView, Camera } from "expo-camera";
 import { LinearGradient } from 'expo-linear-gradient';
+import Svg, { Path, Rect, Circle } from 'react-native-svg';
 
 // Importar produtos do arquivo local
 const produtosData = require('../products.json');
+
+// Componente de ícone personalizado baseado na sua imagem
+const CustomCartIcon = ({ size = 45 }: { size?: number }) => (
+  <Svg width={size} height={size} viewBox="0 0 200 200">
+    {/* Alça do carrinho */}
+    <Path
+      d="M50 40 L50 30 Q50 25 55 25 L75 25 Q80 25 80 30 L80 40"
+      fill="none"
+      stroke="#FFFFFF"
+      strokeWidth="8"
+      strokeLinecap="round"
+    />
+    
+    {/* Corpo principal do carrinho */}
+    <Path
+      d="M40 40 Q35 40 35 45 L35 140 Q35 150 45 155 L155 155 Q165 150 165 140 L165 45 Q165 40 160 40 Z"
+      fill="none"
+      stroke="#FFFFFF"
+      strokeWidth="8"
+      strokeLinejoin="round"
+    />
+    
+    {/* Produtos dentro do carrinho (QR codes representados) */}
+    <Rect x="60" y="70" width="25" height="25" fill="none" stroke="#FFFFFF" strokeWidth="6" rx="3"/>
+    <Rect x="100" y="70" width="25" height="25" fill="none" stroke="#FFFFFF" strokeWidth="6" rx="3"/>
+    <Rect x="140" y="70" width="25" height="40" fill="#FFFFFF" rx="3"/>
+    
+    <Rect x="60" y="110" width="25" height="25" fill="none" stroke="#FFFFFF" strokeWidth="6" rx="3"/>
+    <Rect x="100" y="110" width="15" height="15" fill="#FFFFFF" rx="2"/>
+    <Rect x="120" y="110" width="8" height="25" fill="#FFFFFF" rx="2"/>
+    <Rect x="132" y="120" width="18" height="8" fill="#FFFFFF" rx="2"/>
+    
+    {/* Rodas do carrinho */}
+    <Circle cx="70" cy="175" r="12" fill="#FFFFFF"/>
+    <Circle cx="140" cy="175" r="12" fill="#FFFFFF"/>
+    
+    {/* Base do carrinho */}
+    <Path d="M30 175 L170 175" stroke="#FFFFFF" strokeWidth="8" strokeLinecap="round"/>
+  </Svg>
+);
 
 type Produto = {
   id: string;
@@ -139,24 +180,53 @@ export default function Index() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <View style={styles.logoContainer}>
-          <Text style={styles.logoIcon}>🛒</Text>
+      <LinearGradient
+        colors={['#f8f9fa', '#e9ecef']}
+        style={styles.mainGradient}
+      >
+        {/* Header Melhorado */}
+        <View style={styles.header}>
+          <LinearGradient
+            colors={['#26b2b7', '#008389']}
+            style={styles.logoContainer}
+          >
+            <CustomCartIcon size={45} />
+          </LinearGradient>
+          <Text style={styles.title}>ScanTap</Text>
+          <Text style={styles.subtitle}>ESCANEOU, PAGOU, SAIU!</Text>
+          <View style={styles.decorativeLine} />
         </View>
-        <Text style={styles.title}>ScanTap</Text>
-        <Text style={styles.subtitle}>ESCANEOU, PAGOU, SAIU!</Text>
-      </View>
 
       <TouchableOpacity 
-        style={styles.scanButton}
+        style={styles.modernScanButton}
         onPress={iniciarScanner}
+        activeOpacity={0.8}
       >
-        <Text style={styles.scanButtonIcon}>📷</Text>
-        <Text style={styles.scanButtonText}>Escanear Produto</Text>
+        <LinearGradient
+          colors={['#26b2b7', '#008389']}
+          style={styles.scanButtonGradient}
+        >
+          <View style={styles.scanButtonContent}>
+            <Text style={styles.scanButtonIcon}>📷</Text>
+            <Text style={styles.scanButtonText}>Escanear Produto</Text>
+            <Text style={styles.scanButtonSubtext}>Toque para começar</Text>
+          </View>
+        </LinearGradient>
       </TouchableOpacity>
 
-      <View style={styles.cartSection}>
-        <Text style={styles.cartTitle}>🛒 Seu Carrinho</Text>
+      <View style={styles.modernCartSection}>
+        <LinearGradient
+          colors={['#ffffff', '#f8f9fa']}
+          style={styles.cartGradient}
+        >
+          <View style={styles.cartHeader}>
+            <Text style={styles.cartTitle}>🛒 Seu Carrinho</Text>
+            {carrinho.length > 0 && (
+              <View style={styles.cartBadge}>
+                <Text style={styles.cartBadgeText}>{carrinho.length}</Text>
+              </View>
+            )}
+          </View>
         
         {carrinho.length === 0 ? (
           <View style={styles.emptyCartContainer}>
@@ -170,21 +240,44 @@ export default function Index() {
               data={carrinho}
               keyExtractor={(_, index) => index.toString()}
               renderItem={({ item }) => (
-                <View style={styles.cartItem}>
-                  <Text style={styles.cartItemName}>{item.nome}</Text>
+                <Animated.View 
+                  style={[
+                    styles.modernCartItem,
+                    {
+                      opacity: animatedValue,
+                      transform: [{ scale: animatedValue }]
+                    }
+                  ]}
+                >
+                  <View style={styles.cartItemLeft}>
+                    <View style={styles.cartItemIcon}>
+                      <Text style={styles.cartItemIconText}>🛍️</Text>
+                    </View>
+                    <View style={styles.cartItemInfo}>
+                      <Text style={styles.cartItemName}>{item.nome}</Text>
+                      <Text style={styles.cartItemCode}>#{item.qrCode}</Text>
+                    </View>
+                  </View>
                   <Text style={styles.cartItemPrice}>R$ {item.preco.toFixed(2)}</Text>
-                </View>
+                </Animated.View>
               )}
               style={styles.cartList}
               showsVerticalScrollIndicator={false}
             />
             
-            <View style={styles.totalSection}>
-              <Text style={styles.totalText}>Total: R$ {total.toFixed(2)}</Text>
+            <View style={styles.modernTotalSection}>
+              <LinearGradient
+                colors={['#008389', '#26b2b7']}
+                style={styles.totalGradient}
+              >
+                <Text style={styles.totalLabel}>Total</Text>
+                <Text style={styles.totalAmount}>R$ {total.toFixed(2)}</Text>
+              </LinearGradient>
             </View>
 
             <TouchableOpacity
-              style={styles.checkoutButton}
+              style={styles.modernCheckoutButton}
+              activeOpacity={0.8}
               onPress={() => {
                 Alert.alert(
                   "🎉 Compra Finalizada!", 
@@ -201,13 +294,20 @@ export default function Index() {
                 );
               }}
             >
-              <Text style={styles.checkoutButtonText}>💳 Finalizar Compra</Text>
+              <LinearGradient
+                colors={['#27ae60', '#2ecc71']}
+                style={styles.checkoutButtonGradient}
+              >
+                <Text style={styles.checkoutButtonText}>💳 Finalizar Compra</Text>
+              </LinearGradient>
             </TouchableOpacity>
           </>
         )}
+        </LinearGradient>
       </View>
 
       <Text style={styles.footer}>Produtos disponíveis: {produtos.length}</Text>
+      </LinearGradient>
     </SafeAreaView>
   );
 }
@@ -592,5 +692,61 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 16,
     fontWeight: "bold",
+  },
+  // Estilos que estavam faltando
+  mainGradient: {
+    flex: 1,
+    paddingHorizontal: 20,
+  },
+  cartItemIconText: {
+    color: "white",
+    fontSize: 18,
+    fontWeight: "bold",
+  },
+  totalGradient: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 20,
+    paddingHorizontal: 25,
+    borderRadius: 15,
+  },
+  totalAmount: {
+    color: "white",
+    fontSize: 24,
+    fontWeight: "800",
+  },
+  footer: {
+    textAlign: "center",
+    fontSize: 14,
+    color: "#008389",
+    marginTop: 20,
+    fontWeight: "600",
+  },
+  // Estilos para o ícone de carrinho customizado
+  customCartIcon: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  cartIconLine1: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "bold",
+    lineHeight: 12,
+    letterSpacing: 2,
+  },
+  cartIconLine2: {
+    color: "white",
+    fontSize: 18,
+    fontWeight: "bold",
+    lineHeight: 14,
+    letterSpacing: 6,
+  },
+  cartIconLine3: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "bold",
+    lineHeight: 14,
+    letterSpacing: 4,
   },
 });
