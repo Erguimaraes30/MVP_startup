@@ -2,49 +2,13 @@ import React, { useState, useEffect } from "react";
 import { View, Text, StyleSheet, FlatList, Alert, TouchableOpacity, SafeAreaView, Dimensions, Animated } from "react-native";
 import { CameraView, Camera } from "expo-camera";
 import { LinearGradient } from 'expo-linear-gradient';
-import Svg, { Path, Rect, Circle } from 'react-native-svg';
 
 // Importar produtos do arquivo local
 const produtosData = require('../products.json');
 
-// Componente de ícone personalizado baseado na sua imagem
+// Logo emoji simples - sem conflitos de registro
 const CustomCartIcon = ({ size = 45 }: { size?: number }) => (
-  <Svg width={size} height={size} viewBox="0 0 200 200">
-    {/* Alça do carrinho */}
-    <Path
-      d="M50 40 L50 30 Q50 25 55 25 L75 25 Q80 25 80 30 L80 40"
-      fill="none"
-      stroke="#FFFFFF"
-      strokeWidth="8"
-      strokeLinecap="round"
-    />
-    
-    {/* Corpo principal do carrinho */}
-    <Path
-      d="M40 40 Q35 40 35 45 L35 140 Q35 150 45 155 L155 155 Q165 150 165 140 L165 45 Q165 40 160 40 Z"
-      fill="none"
-      stroke="#FFFFFF"
-      strokeWidth="8"
-      strokeLinejoin="round"
-    />
-    
-    {/* Produtos dentro do carrinho (QR codes representados) */}
-    <Rect x="60" y="70" width="25" height="25" fill="none" stroke="#FFFFFF" strokeWidth="6" rx="3"/>
-    <Rect x="100" y="70" width="25" height="25" fill="none" stroke="#FFFFFF" strokeWidth="6" rx="3"/>
-    <Rect x="140" y="70" width="25" height="40" fill="#FFFFFF" rx="3"/>
-    
-    <Rect x="60" y="110" width="25" height="25" fill="none" stroke="#FFFFFF" strokeWidth="6" rx="3"/>
-    <Rect x="100" y="110" width="15" height="15" fill="#FFFFFF" rx="2"/>
-    <Rect x="120" y="110" width="8" height="25" fill="#FFFFFF" rx="2"/>
-    <Rect x="132" y="120" width="18" height="8" fill="#FFFFFF" rx="2"/>
-    
-    {/* Rodas do carrinho */}
-    <Circle cx="70" cy="175" r="12" fill="#FFFFFF"/>
-    <Circle cx="140" cy="175" r="12" fill="#FFFFFF"/>
-    
-    {/* Base do carrinho */}
-    <Path d="M30 175 L170 175" stroke="#FFFFFF" strokeWidth="8" strokeLinecap="round"/>
-  </Svg>
+  <Text style={{ fontSize: size * 0.75, color: '#FFFFFF' }}>🛒</Text>
 );
 
 type Produto = {
@@ -80,7 +44,7 @@ export default function Index() {
   }, []);
 
   const buscarProdutoPorQR = (qrCode: string): Produto | null => {
-    return produtos.find(produto => produto.qrCode === qrCode) || null;
+    return produtos.find((produto: Produto) => produto.qrCode === qrCode) || null;
   };
 
   const onQRCodeScanned = ({ data }: { data: string }) => {
